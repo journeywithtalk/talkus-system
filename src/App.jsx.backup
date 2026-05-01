@@ -1,6 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
-import { auth } from "./firebase";
-import { signInWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail } from "firebase/auth";
+import React, { useState, useMemo } from "react";
 
 // ── 任務定義 ─────────────────────────────────────────────────────
 // 諮詢階段（4項）
@@ -4929,34 +4927,15 @@ export default function App() {
   ];
 
   // 登入處理
-  const handleLogin=async()=>{
-    try{
-      setLoginErr("");
-      await signInWithEmailAndPassword(auth,loginEmail,loginPwd);
-      // onAuthStateChanged 會處理登入狀態
-    }catch(err){
-      if(err.code==="auth/wrong-password"||err.code==="auth/user-not-found"||err.code==="auth/invalid-credential")
-        setLoginErr("帳號或密碼錯誤");
-      else setLoginErr("登入失敗："+err.message);
-    }
+  const handleLogin=()=>{
+    const acc=accounts.find(a=>a.email===loginEmail&&a.password===loginPwd);
+    if(!acc){setLoginErr("帳號或密碼錯誤");return;}
+    setCurrentRole(acc.role);
+    setCurrentUser(acc.name);
+    setLoginErr("");
+    if(acc.firstLogin){setMustChangePwd(true);}
+    else{setIsLoggedIn(true);}
   };
-
-  // 監聽 Firebase 登入狀態
-  useEffect(()=>{
-    const unsub=onAuthStateChanged(auth,(user)=>{
-      if(user){
-        setIsLoggedIn(true);
-        setLoginEmail(user.email);
-        // 用 email 比對 accounts 來設定角色
-        const acc=accounts.find(a=>a.email===user.email);
-        if(acc){setCurrentRole(acc.role);setCurrentUser(acc.name);}
-        else{setCurrentRole("manager");setCurrentUser(user.email.split("@")[0]);}
-      }else{
-        setIsLoggedIn(false);
-      }
-    });
-    return ()=>unsub();
-  },[]);
   const handleChangePwd=()=>{
     if(newPwd.length<6){setChangePwdErr("密碼至少6碼");return;}
     if(newPwd!==newPwd2){setChangePwdErr("兩次密碼不一致");return;}
@@ -5043,9 +5022,9 @@ export default function App() {
                 ✅ 重設連結已傳送至 {forgotEmail}（模擬）
                 <br/><span style={{fontSize:11,color:"#64748b"}}>⚠️ 實際環境需整合後端Email服務</span>
               </div>
-              :<button onClick={async()=>{
-                  try{await sendPasswordResetEmail(auth,forgotEmail);setForgotSent(true);}
-                  catch(err){setLoginErr("發送失敗："+err.message);}
+              :<button onClick={()=>{
+                  if(accounts.find(a=>a.email===forgotEmail)) setForgotSent(true);
+                  else setLoginErr("找不到此Email帳號");
                 }}
                 style={{background:"#6366f1",color:"#fff",border:"none",borderRadius:9,padding:"12px",
                   fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
@@ -5059,7 +5038,11 @@ export default function App() {
             </button>
           </div>
         }
-
+        <div style={{marginTop:20,padding:"12px",background:"#fffbeb",borderRadius:8,
+          border:"1px solid #fde68a",fontSize:11,color:"#92400e",lineHeight:1.6}}>
+          ⚠️ <strong>安全提醒：</strong>此系統為前端模擬登入，密碼儲存於瀏覽器記憶體中。
+          如需正式環境請整合後端服務（Firebase / Supabase）以確保安全。
+        </div>
       </div>
     </div>
   );
@@ -5096,7 +5079,7 @@ export default function App() {
         <div style={{padding:"14px 20px",borderTop:"1px solid #1e293b"}}>
           <div style={{fontSize:11,color:"#a5b4fc",fontWeight:700,marginBottom:2}}>{currentUser}</div>
           <div style={{fontSize:10,color:"#475569",marginBottom:6}}>{{manager:"管理者",consultant:"顧問",admin:"行政"}[currentRole]}</div>
-          <button onClick={()=>{signOut(auth);setIsLoggedIn(false);setLoginEmail("");setLoginPwd("");}}
+          <button onClick={()=>{setIsLoggedIn(false);setLoginEmail("");setLoginPwd("");}}
             style={{background:"rgba(239,68,68,0.15)",color:"#fca5a5",border:"1px solid rgba(239,68,68,0.3)",
               borderRadius:6,padding:"5px 12px",fontSize:12,fontWeight:700,cursor:"pointer",
               fontFamily:"inherit",width:"100%"}}>
