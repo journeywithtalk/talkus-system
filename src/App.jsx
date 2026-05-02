@@ -994,7 +994,7 @@ export default function App() {
   const [exchangeRates,setExchangeRates] = useState({}); // key: "YYYY-MM", value: number
   const [payStatus,setPayStatus]         = useState({}); // key: "sid_incentive/phase1/phase2" -> "待發放"|"已發放"|"已扣回"
   const getPayStatus=(sid,type)=>payStatus[`${sid}_${type}`]||"待發放";
-  const setPS=(sid,type,val)=>setPayStatus(prev=>({...prev,[`${sid}_${type}`]:val}));
+  const setPS=(sid,type,val)=>setPayStatus(prev=>{const updated={...prev,[`${sid}_${type}`]:val};saveSettingsToDB("payStatus",updated);return updated;});
   // 全域 isParttime helper（供所有 View 使用）
   const isParttimeGlobal=(consultantName)=>{
     const m=consultantDB.find(c=>c.name===consultantName);
@@ -2344,7 +2344,7 @@ export default function App() {
                       fontSize:13,fontFamily:"inherit",outline:"none",width:90}}/>
                   <button onClick={()=>{
                     const v=parseFloat(rateInput);
-                    if(!isNaN(v)&&v>0){setExchangeRates(prev=>({...prev,[rateKey]:Math.round(v*10)/10}));}
+                    if(!isNaN(v)&&v>0){setExchangeRates(prev=>{const updated={...prev,[rateKey]:Math.round(v*10)/10};saveSettingsToDB("exchangeRates",updated);return updated;});}
                     setEditRate(false);
                   }} style={{...btnS("#6366f1"),padding:"5px 12px",fontSize:12}}>套用</button>
                   <button onClick={()=>setEditRate(false)}
@@ -3786,7 +3786,7 @@ export default function App() {
                             <input type="date" value={lvlForm.effectiveDate} onChange={e=>setLvlForm(p=>({...p,effectiveDate:e.target.value}))} style={inp4}/></div>
                         </div>
                         <div style={{display:"flex",gap:8}}>
-                          <button onClick={()=>{setBonusLevels(prev=>prev.map(l=>l.id===lvl.id?{...l,...lvlForm}:l));setEditLvl(null);}}
+                          <button onClick={()=>{setBonusLevels(prev=>{const updated=prev.map(l=>l.id===lvl.id?{...l,...lvlForm}:l);saveSettingsToDB("bonusLevels",updated);return updated;});setEditLvl(null);}}
                             style={btnS("#6366f1")}>💾 儲存</button>
                           <button onClick={()=>setEditLvl(null)} style={btnS("#f1f5f9","#475569")}>取消</button>
                         </div>
@@ -3830,7 +3830,7 @@ export default function App() {
                               <input type="date" value={lvlForm.effectiveDate||""} onChange={e=>setLvlForm(p=>({...p,effectiveDate:e.target.value}))} style={inp4}/></div>
                           </div>
                           <div style={{display:"flex",gap:8}}>
-                            <button onClick={()=>{setParttimeLevels(prev=>prev.map(x=>x.id===pl.id?{...x,pct:lvlForm.pct,effectiveDate:lvlForm.effectiveDate}:x));setEditLvl(null);}}
+                            <button onClick={()=>{setParttimeLevels(prev=>{const updated=prev.map(x=>x.id===pl.id?{...x,pct:lvlForm.pct,effectiveDate:lvlForm.effectiveDate}:x);saveSettingsToDB("parttimeLevels",updated);return updated;});setEditLvl(null);}}
                               style={btnS("#f59e0b","#fff")}>💾 儲存</button>
                             <button onClick={()=>setEditLvl(null)} style={btnS("#f1f5f9","#475569")}>取消</button>
                           </div>
@@ -3930,7 +3930,7 @@ export default function App() {
                         </div>
                         <div style={{display:"flex",gap:8}}>
                           <button onClick={()=>{
-                            setAdminFeeSettings(prev=>prev.map(x=>x.id===item.id?{...x,amount:editFeeAmt,effectiveDate:editFeeDate}:x));
+                            setAdminFeeSettings(prev=>{const updated=prev.map(x=>x.id===item.id?{...x,amount:editFeeAmt,effectiveDate:editFeeDate}:x);saveSettingsToDB("adminFeeSettings",updated);return updated;});
                             setEditingFeeId(null);
                           }} style={btnS("#6366f1")}>💾 儲存</button>
                           <button onClick={()=>setEditingFeeId(null)} style={btnS("#f1f5f9","#475569")}>取消</button>
@@ -4048,19 +4048,23 @@ export default function App() {
       setEditId(school.id); setShowAdd(false);
     };
     const saveEdit=()=>{
-      setSchoolDB(prev=>prev.map(s=>s.id===editId?{...s,...form,
+      const updatedSchool={...schoolDB.find(s=>s.id===editId),...form,
         programs:form.programs.filter(p=>p.trim()),
-        rooms:form.rooms.filter(r=>r.trim())}:s));
+        rooms:form.rooms.filter(r=>r.trim())};
+      setSchoolDB(prev=>prev.map(s=>s.id===editId?updatedSchool:s));
+      saveSchoolToDB(updatedSchool);
       setEditId(null);
     };
     const saveAdd=()=>{
       if(!form.name.trim()) return;
-      setSchoolDB(prev=>[...prev,{id:Date.now(),name:form.name,
+      const newSchool={id:String(Date.now()),name:form.name,
         programs:form.programs.filter(p=>p.trim()),
-        rooms:form.rooms.filter(r=>r.trim())}]);
+        rooms:form.rooms.filter(r=>r.trim())};
+      setSchoolDB(prev=>[...prev,newSchool]);
+      saveSchoolToDB(newSchool);
       setShowAdd(false); resetForm();
     };
-    const deleteSchool=(id)=>setSchoolDB(prev=>prev.filter(s=>s.id!==id));
+    const deleteSchool=(id)=>{setSchoolDB(prev=>prev.filter(s=>s.id!==id));deleteSchoolFromDB(id);};
 
     const FieldList=({label,vals,key2,onChange,onAdd})=>(
       <div>
@@ -4191,7 +4195,9 @@ export default function App() {
             <div style={{display:"flex",gap:8}}>
               <button onClick={()=>{
                 if(importPreview.length===0) return;
-                setSchoolDB(prev=>[...prev,...importPreview]);
+                const withIds=importPreview.map(s=>({...s,id:String(s.id||Date.now()+Math.random())}));
+                setSchoolDB(prev=>[...prev,...withIds]);
+                withIds.forEach(s=>saveSchoolToDB(s));
                 setShowImport(false);setImportText("");setImportPreview([]);
               }} style={btnS("#059669")} disabled={importPreview.length===0}>
                 ✅ 確認匯入 {importPreview.length>0?`(${importPreview.length}所)`:""}
@@ -4287,11 +4293,15 @@ export default function App() {
 
     const saveAdd=()=>{
       if(!form.name.trim()) return;
-      setConsultantDB(prev=>[...prev,{...form,id:Date.now()}]);
+      const newMember={...form,id:String(Date.now())};
+      setConsultantDB(prev=>[...prev,newMember]);
+      saveConsultantToDB(newMember);
       setShowAdd(false); setForm(emptyForm);
     };
     const saveEdit=()=>{
-      setConsultantDB(prev=>prev.map(m=>m.id===editId?{...m,...form}:m));
+      const updatedMember={...consultantDB.find(m=>m.id===editId),...form};
+      setConsultantDB(prev=>prev.map(m=>m.id===editId?updatedMember:m));
+      saveConsultantToDB(updatedMember);
       setEditId(null);
     };
     // 試用期達標通知檢查
@@ -4564,7 +4574,7 @@ export default function App() {
                             {isSelf&&!isManager?"✏️ 編輯個人資料":"✏️ 編輯"}
                           </button>}
                         {isManager&&
-                          <button onClick={()=>setConsultantDB(prev=>prev.filter(x=>x.id!==m.id))}
+                          <button onClick={()=>{setConsultantDB(prev=>prev.filter(x=>x.id!==m.id));deleteConsultantFromDB(m.id);}}
                             style={{...btnS("#fef2f2","#ef4444"),padding:"5px 12px",fontSize:12,border:"1px solid #fca5a5"}}>🗑 刪除</button>}
                       </div>
                     </div>
@@ -5057,6 +5067,26 @@ export default function App() {
   const deleteConsultantFromDB=async(id)=>{
     await deleteDoc(doc(db,"consultants",String(id)));
   };
+
+  // ── 設定資料 Firestore 同步 ─────────────────────────────
+  const saveSettingsToDB=async(key,data)=>{
+    await setDoc(doc(db,"settings",key),{data});
+  };
+  // 讀取設定
+  useEffect(()=>{
+    const unsub=onSnapshot(collection(db,"settings"),(snap)=>{
+      snap.docs.forEach(d=>{
+        const key=d.id;
+        const val=d.data().data;
+        if(key==="bonusLevels"&&Array.isArray(val)) setBonusLevels(val);
+        if(key==="parttimeLevels"&&Array.isArray(val)) setParttimeLevels(val);
+        if(key==="adminFeeSettings"&&Array.isArray(val)) setAdminFeeSettings(val);
+        if(key==="exchangeRates"&&val) setExchangeRates(val);
+        if(key==="payStatus"&&val) setPayStatus(val);
+      });
+    });
+    return ()=>unsub();
+  },[]);
   const handleChangePwd=()=>{
     if(newPwd.length<6){setChangePwdErr("密碼至少6碼");return;}
     if(newPwd!==newPwd2){setChangePwdErr("兩次密碼不一致");return;}
