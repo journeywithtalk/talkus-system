@@ -1026,6 +1026,16 @@ export default function App() {
     {id:4,label:"Level 4",minUSD:13001,maxUSD:null,pct:15,effectiveDate:"2026-01-01"},
   ]);
 
+  // 兼職顧問分潤設定
+  const [parttimeLevels,setParttimeLevels] = useState([
+    {id:"company",label:"公司來源（Company Lead）",pct:30,effectiveDate:"2026-01-01"},
+    {id:"self",label:"自行開發（Self-sourced）",pct:45,effectiveDate:"2026-01-01"},
+  ]);
+  const getParttimePctGlobal=(studentSource)=>{
+    const item=parttimeLevels.find(x=>x.id===studentSource);
+    return item?item.pct:(studentSource==="self"?45:30);
+  };
+
   // ── 帳號資料（模擬，不可用於正式環境）─────────────────
   const [accounts,setAccounts] = useState([
     {email:"zillionstars0523@gmail.com",role:"manager",name:"管理者"},
@@ -2129,7 +2139,7 @@ export default function App() {
       return {level:"Level 4",pct:15};
     };
     // 兼職顧問：依學生來源決定分潤比
-    const getParttimePct=(studentSource)=>studentSource==="self"?45:30;
+    const getParttimePct=(studentSource)=>getParttimePctGlobal(studentSource);
     // 判斷顧問是否為兼職
     const isParttime=(consultantName)=>{
       const m=consultantDB.find(c=>c.name===consultantName);
@@ -2626,7 +2636,7 @@ export default function App() {
       // 分潤計算
       let bonusPay, phase1TWD, phase2TWD;
       if(ptPay){
-        const ptPct2=s.studentSource==="self"?45:30;
+        const ptPct2=getParttimePctGlobal(s.studentSource);
         bonusPay=Math.round(commTWD*ptPct2/100);
         const adminFeeP=s.adminService==="basic"?500:s.adminService==="full"?1000:0;
         const postageP=Number(s.postageFee||0);
@@ -2984,7 +2994,7 @@ export default function App() {
       // 分潤計算：兼職依學生來源，全職依滾動級距
       let bonusTot;
       if(pt){
-        const ptPct=s.studentSource==="self"?45:30;
+        const ptPct=getParttimePctGlobal(s.studentSource);
         bonusTot=Math.round(commTWD*ptPct/100);
       } else {
         const sMonthUSD=[...enrolledStudents,...closedStudents]
@@ -3799,6 +3809,51 @@ export default function App() {
             <div style={{background:"#fffbeb",border:"1px solid #fde68a",borderRadius:10,padding:"10px 14px",
               marginTop:12,fontSize:12,color:"#92400e"}}>
               💡 修改分潤設定後，業績頁面會自動依各月份套用對應的分潤比率。歷史月份的已確認獎金不受影響。
+            </div>
+
+            {/* 兼職顧問分潤設定 */}
+            <div style={{marginTop:24}}>
+              <div style={{fontWeight:800,color:"#0f172a",fontSize:14,marginBottom:12}}>
+                🤝 兼職顧問分潤設定　<span style={{fontSize:12,fontWeight:400,color:"#64748b"}}>依學生來源決定分潤比例</span>
+              </div>
+              <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                {parttimeLevels.map(pl=>(
+                  <div key={pl.id} style={{background:"#fff",borderRadius:12,border:"1px solid #fde68a",overflow:"hidden"}}>
+                    {editLvl===`pt_${pl.id}`
+                      ?<div style={{padding:16,background:"#fffbeb"}}>
+                          <div style={{display:"grid",gridTemplateColumns:"2fr 1fr 1fr",gap:10,marginBottom:10}}>
+                            <div><label style={{fontSize:11,color:"#64748b",fontWeight:700,display:"block",marginBottom:3}}>來源類型</label>
+                              <div style={{...inp4,background:"#f8fafc",color:"#64748b",cursor:"default"}}>{pl.label}</div></div>
+                            <div><label style={{fontSize:11,color:"#64748b",fontWeight:700,display:"block",marginBottom:3}}>分潤比例 %</label>
+                              <input type="number" min="1" max="100" value={lvlForm.pct||""} onChange={e=>setLvlForm(p=>({...p,pct:Number(e.target.value)}))} style={inp4}/></div>
+                            <div><label style={{fontSize:11,color:"#64748b",fontWeight:700,display:"block",marginBottom:3}}>📅 套用起始日</label>
+                              <input type="date" value={lvlForm.effectiveDate||""} onChange={e=>setLvlForm(p=>({...p,effectiveDate:e.target.value}))} style={inp4}/></div>
+                          </div>
+                          <div style={{display:"flex",gap:8}}>
+                            <button onClick={()=>{setParttimeLevels(prev=>prev.map(x=>x.id===pl.id?{...x,pct:lvlForm.pct,effectiveDate:lvlForm.effectiveDate}:x));setEditLvl(null);}}
+                              style={btnS("#f59e0b","#fff")}>💾 儲存</button>
+                            <button onClick={()=>setEditLvl(null)} style={btnS("#f1f5f9","#475569")}>取消</button>
+                          </div>
+                        </div>
+                      :<div style={{display:"flex",alignItems:"center",gap:14,padding:"14px 18px",background:"#fffbeb"}}>
+                          <span style={{background:"#fef9c3",color:"#92400e",borderRadius:99,padding:"3px 12px",
+                            fontSize:12,fontWeight:800,minWidth:100,textAlign:"center"}}>
+                            {pl.id==="company"?"🏢 公司來源":"🤝 自行開發"}
+                          </span>
+                          <div style={{flex:1,fontSize:13,color:"#0f172a"}}>{pl.label}</div>
+                          <span style={{fontWeight:800,color:"#92400e",fontSize:16}}>{pl.pct}%</span>
+                          <span style={{fontSize:11,color:"#94a3b8"}}>套用自 {pl.effectiveDate}</span>
+                          <button onClick={()=>{setLvlForm({pct:pl.pct,effectiveDate:pl.effectiveDate});setEditLvl(`pt_${pl.id}`);}}
+                            style={{...btnS("#fef9c3","#92400e"),padding:"5px 12px",fontSize:12,border:"1px solid #fde68a"}}>✏️ 修改</button>
+                        </div>
+                    }
+                  </div>
+                ))}
+              </div>
+              <div style={{background:"#fffbeb",border:"1px solid #fde68a",borderRadius:10,padding:"10px 14px",
+                marginTop:12,fontSize:12,color:"#92400e"}}>
+                💡 兼職顧問無激勵獎金（NT$500）。獎金計算：佣金TWD × 分潤比例。前期50%（扣行政費），後期50%。
+              </div>
             </div>
           </div>
         )}
