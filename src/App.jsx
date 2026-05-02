@@ -4307,9 +4307,26 @@ export default function App() {
             <div style={{display:"flex",gap:8}}>
               <button onClick={()=>{
                 if(importPreview.length===0) return;
-                const withIds=importPreview.map(s=>({...s,id:String(s.id||Date.now()+Math.random())}));
-                setSchoolDB(prev=>[...prev,...withIds]);
-                withIds.forEach(s=>saveSchoolToDB(s));
+                setSchoolDB(prev=>{
+                  const updated=[...prev];
+                  importPreview.forEach(imp=>{
+                    const existing=updated.find(s=>s.name===imp.name);
+                    if(existing){
+                      // 學校已存在：合併新的課程和房型（不重複）
+                      const newPrograms=[...new Set([...(existing.programs||[]),...(imp.programs||[])])];
+                      const newRooms=[...new Set([...(existing.rooms||[]),...(imp.rooms||[])])];
+                      existing.programs=newPrograms;
+                      existing.rooms=newRooms;
+                      saveSchoolToDB(existing);
+                    }else{
+                      // 新學校：直接新增
+                      const newSchool={...imp,id:String(imp.id||Date.now()+Math.random())};
+                      updated.push(newSchool);
+                      saveSchoolToDB(newSchool);
+                    }
+                  });
+                  return updated;
+                });
                 setShowImport(false);setImportText("");setImportPreview([]);
               }} style={btnS("#059669")} disabled={importPreview.length===0}>
                 ✅ 確認匯入 {importPreview.length>0?`(${importPreview.length}所)`:""}
