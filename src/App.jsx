@@ -54,6 +54,8 @@ const PHASE_CONFIG = {
   "就讀中":   { color:"#10b981", bg:"#ecfdf5", icon:"🏫" },
 };
 
+const TW_CITIES = ["台北市","新北市","桃園市","台中市","台南市","高雄市","基隆市","新竹市","嘉義市","新竹縣","苗栗縣","彰化縣","南投縣","雲林縣","嘉義縣","屏東縣","宜蘭縣","花蓮縣","台東縣","澎湖縣","金門縣","連江縣"];
+
 const ALL_STATUSES  = ["尚未進行","進行中","待確認","已完成"];
 const STATUS_CONFIG = {
   "尚未進行":   { color:"#94a3b8", bg:"#f8fafc", border:"#e2e8f0" },
@@ -122,6 +124,8 @@ function EditEnrolledModal({ student, onConfirm, onCancelEnroll, onCancel, consu
   const [cancelNote,setCancelNote]=useState("");
   const [form,setForm]=useState({
     name:student.name||"",
+    gender:student.gender||"",
+    city:student.city||"",
     phone:student.phone||"",
     email:student.email||"",
     birthday:student.birthday||"",
@@ -190,6 +194,22 @@ function EditEnrolledModal({ student, onConfirm, onCancelEnroll, onCancel, consu
           <div style={{gridColumn:"1/-1"}}>
             <label style={{fontSize:11,color:"#64748b",fontWeight:700,display:"block",marginBottom:4}}>姓名</label>
             <input value={form.name} onChange={e=>f("name",e.target.value)} style={inp}/>
+          </div>
+          <div>
+            <label style={{fontSize:11,color:"#64748b",fontWeight:700,display:"block",marginBottom:4}}>性別</label>
+            <select value={form.gender} onChange={e=>f("gender",e.target.value)} style={inp}>
+              <option value="">— 請選擇 —</option>
+              <option value="male">男</option>
+              <option value="female">女</option>
+              <option value="other">其他</option>
+            </select>
+          </div>
+          <div>
+            <label style={{fontSize:11,color:"#64748b",fontWeight:700,display:"block",marginBottom:4}}>居住地區</label>
+            <select value={form.city} onChange={e=>f("city",e.target.value)} style={inp}>
+              <option value="">— 請選擇縣市 —</option>
+              {TW_CITIES.map(c=><option key={c} value={c}>{c}</option>)}
+            </select>
           </div>
           {[["電話","phone","text"],["Email","email","email"],
             ["負責顧問","consultant","text"]].map(([lb,k,tp])=>(
@@ -402,6 +422,8 @@ function UpgradeModal({ student, onConfirm, onClose, onCancel, consultantDB=[] }
   })();
   const [form,setForm]=useState({
     ...initSchoolData,
+    gender:student.gender||"",
+    city:student.city||"",
     departDate:student.departDate||"",
     returnDate:student.returnDate||"",weeks:student.weeks||"",
     consultant:student.consultant||"",
@@ -653,7 +675,7 @@ function AddStudentModal({ mode, prefill, onConfirm, onCancel, schoolDB=[], cons
   const isEnroll=mode==="enrolled";
   const isEdit=!!prefill;
   const [form,setForm]=useState({
-    name:prefill?.name||"",phone:prefill?.phone||"",email:prefill?.email||"",
+    name:prefill?.name||"",gender:prefill?.gender||"",city:prefill?.city||"",phone:prefill?.phone||"",email:prefill?.email||"",
     studentSource:prefill?.studentSource||"company",
     companySourceDetail:prefill?.companySourceDetail||"",
     selfSourceNote:prefill?.selfSourceNote||"",
@@ -767,6 +789,22 @@ function AddStudentModal({ mode, prefill, onConfirm, onCancel, schoolDB=[], cons
           <div style={{gridColumn:"1/-1"}}>
             <label style={{fontSize:11,color:"#64748b",fontWeight:700,display:"block",marginBottom:4}}>姓名 *</label>
             <input value={form.name} onChange={e=>f("name",e.target.value)} style={inp} placeholder="學生姓名"/>
+          </div>
+          <div>
+            <label style={{fontSize:11,color:"#64748b",fontWeight:700,display:"block",marginBottom:4}}>性別</label>
+            <select value={form.gender} onChange={e=>f("gender",e.target.value)} style={inp}>
+              <option value="">— 請選擇 —</option>
+              <option value="male">男</option>
+              <option value="female">女</option>
+              <option value="other">其他</option>
+            </select>
+          </div>
+          <div>
+            <label style={{fontSize:11,color:"#64748b",fontWeight:700,display:"block",marginBottom:4}}>居住地區</label>
+            <select value={form.city} onChange={e=>f("city",e.target.value)} style={inp}>
+              <option value="">— 請選擇縣市 —</option>
+              {TW_CITIES.map(c=><option key={c} value={c}>{c}</option>)}
+            </select>
           </div>
           <div>
             <label style={{fontSize:11,color:"#64748b",fontWeight:700,display:"block",marginBottom:4}}>📅 諮詢日期</label>
@@ -1582,6 +1620,10 @@ export default function App() {
               </div>
               <div style={{fontSize:12,opacity:0.75,marginTop:4}}>
                 {[sel.school,sel.program,sel.room].filter(Boolean).join("　")}
+                {(sel.gender||sel.city)&&<span style={{marginLeft:10}}>
+                  {sel.gender&&(sel.gender==="male"?"♂ 男":sel.gender==="female"?"♀ 女":"⚧ 其他")}
+                  {sel.city&&`　📍${sel.city}`}
+                </span>}
               </div>
               <div style={{display:"flex",gap:12,fontSize:12,opacity:0.7,marginTop:4,flexWrap:"wrap"}}>
                 {sel.enrollDate&&<span style={{background:"rgba(255,255,255,0.15)",borderRadius:99,padding:"1px 8px"}}>📝 報名 {sel.enrollDate}</span>}
@@ -1780,6 +1822,8 @@ export default function App() {
         </div>
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,fontSize:11,marginBottom:s.sharedNote?10:0}}>
           {[["👤 顧問",s.consultant||"—"],
+            ["⚧ 性別",s.gender==="male"?"男":s.gender==="female"?"女":s.gender==="other"?"其他":"—"],
+            ["📍 地區",s.city||"—"],
             ["✈️ 出發",s.departDate||"—"],["📅 建立",s.createdAt]].map(([l,v])=>(
             <div key={l}><span style={{color:"#94a3b8"}}>{l}　</span>
               <span style={{color:"#0f172a",fontWeight:600}}>{v}</span></div>
@@ -4651,7 +4695,7 @@ export default function App() {
                     <div style={{borderTop:"1px solid #f1f5f9",padding:"16px 20px",background:"#fafbff"}}>
                       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
                         {[
-                          ["姓名",s.name],["電話",s.phone||"—"],["Email",s.email||"—"],
+                          ["姓名",s.name],["性別",s.gender==="male"?"男":s.gender==="female"?"女":s.gender==="other"?"其他":"—"],["居住地區",s.city||"—"],["電話",s.phone||"—"],["Email",s.email||"—"],
                           ["負責顧問",s.consultant||"—"],["諮詢日期",s.consultDate||"—"],
                           ["預計出發",s.departDate||"—"],["預計回程",s.returnDate||"—"],
                           ["就讀週數",s.weeks?s.weeks+"週":"—"],["優先度",s.priority==="high"?"緊急":s.priority==="medium"?"一般":"低"],
