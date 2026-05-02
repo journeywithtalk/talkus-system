@@ -1547,11 +1547,13 @@ export default function App() {
                       <div>
                         {isEditDate?(
                           <input type="date" autoFocus value={editVal}
+                            onClick={e=>e.stopPropagation()}
+                            onMouseDown={e=>e.stopPropagation()}
                             onChange={e=>setEditVal(e.target.value)}
-                            onBlur={()=>{updateTask(student.id,t.id,"dueDate",editVal,taskList);setEditCell(null);}}
+                            onBlur={()=>{setTimeout(()=>{updateTask(student.id,t.id,"dueDate",editVal,taskList);setEditCell(null);},150);}}
                             style={{...inp(),padding:"4px 8px",fontSize:12,width:"120px"}}/>
                         ):(
-                          <button onClick={()=>{setEditCell({sid:student.id,tid:t.id,field:"dueDate",list:taskList});setEditVal(ts.dueDate||"");}}
+                          <button onClick={e=>{e.stopPropagation();setEditCell({sid:student.id,tid:t.id,field:"dueDate",list:taskList});setEditVal(ts.dueDate||"");}}
                             style={{background:"transparent",border:"1px dashed #e2e8f0",borderRadius:6,
                               padding:"4px 10px",fontSize:12,cursor:"pointer",
                               color:ts.dueDate?"#0f172a":"#94a3b8",fontFamily:"inherit",minWidth:100,textAlign:"left"}}>
@@ -1563,11 +1565,17 @@ export default function App() {
                       <div>
                         {isEditNote?(
                           <textarea autoFocus value={editVal}
+                            onClick={e=>e.stopPropagation()}
+                            onMouseDown={e=>e.stopPropagation()}
                             onChange={e=>setEditVal(e.target.value)}
-                            onBlur={()=>{updateTask(student.id,t.id,"note",editVal,taskList);setEditCell(null);}}
+                            onBlur={e=>{
+                              // 延遲執行，避免點擊自身時觸發 blur
+                              setTimeout(()=>{updateTask(student.id,t.id,"note",editVal,taskList);setEditCell(null);},150);
+                            }}
+                            onKeyDown={e=>{if(e.key==="Escape"){updateTask(student.id,t.id,"note",editVal,taskList);setEditCell(null);}}}
                             style={{...inp(),padding:"4px 8px",fontSize:12,resize:"vertical",minHeight:36,lineHeight:1.5}}/>
                         ):(
-                          <button onClick={()=>{setEditCell({sid:student.id,tid:t.id,field:"note",list:taskList});setEditVal(ts.note||"");}}
+                          <button onClick={e=>{e.stopPropagation();setEditCell({sid:student.id,tid:t.id,field:"note",list:taskList});setEditVal(ts.note||"");}}
                             style={{background:"transparent",border:"1px dashed #e2e8f0",borderRadius:6,
                               padding:"4px 10px",fontSize:12,cursor:"pointer",
                               color:ts.note?"#374151":"#94a3b8",fontFamily:"inherit",
@@ -5301,7 +5309,11 @@ export default function App() {
 
   return (
     <div style={{fontFamily:"'Noto Sans TC','DM Sans',sans-serif",background:"#f1f5f9",minHeight:"100vh",display:"flex"}}
-      onClick={()=>{if(editCell?.field==="status")setEditCell(null);}}>
+      onClick={()=>{if(editCell?.field==="status")setEditCell(null);}}
+      onMouseDown={e=>{
+        // 防止點擊備註/日期編輯框時失焦
+        if(e.target.tagName==="TEXTAREA"||e.target.tagName==="INPUT") e.stopPropagation();
+      }}>
       {/* Sidebar */}
       <div style={{width:210,background:"#0f172a",flexShrink:0,display:"flex",flexDirection:"column",
         position:"fixed",top:0,left:0,bottom:0,zIndex:100}}>
