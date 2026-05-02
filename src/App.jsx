@@ -3656,6 +3656,67 @@ export default function App() {
               ))}
             </div>
           </div>
+
+          {/* 年報：性別分佈 + 居住地區分佈 */}
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}>
+            {/* 性別圓餅圖 */}
+            <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",padding:20}}>
+              <div style={{fontWeight:800,color:"#0f172a",fontSize:14,marginBottom:14}}>⚧ {selYear}年 學生性別分佈</div>
+              {(()=>{
+                const genderStats={male:0,female:0,other:0,unknown:0};
+                enrolledInRange.forEach(s=>{
+                  if(s.gender==="male") genderStats.male++;
+                  else if(s.gender==="female") genderStats.female++;
+                  else if(s.gender==="other") genderStats.other++;
+                  else genderStats.unknown++;
+                });
+                const genderData=[
+                  {label:`男（${genderStats.male}人）`,value:genderStats.male,color:"#3b82f6"},
+                  {label:`女（${genderStats.female}人）`,value:genderStats.female,color:"#ec4899"},
+                  {label:`其他（${genderStats.other}人）`,value:genderStats.other,color:"#8b5cf6"},
+                  {label:`未填（${genderStats.unknown}人）`,value:genderStats.unknown,color:"#94a3b8"},
+                ].filter(d=>d.value>0);
+                return genderData.length>0
+                  ?<PieChart size={160} data={genderData}/>
+                  :<div style={{color:"#94a3b8",fontSize:13,textAlign:"center",padding:20}}>此期間無報名資料</div>;
+              })()}
+            </div>
+
+            {/* 居住地區長條圖 */}
+            <div style={{background:"#fff",borderRadius:14,border:"1px solid #e2e8f0",padding:20}}>
+              <div style={{fontWeight:800,color:"#0f172a",fontSize:14,marginBottom:14}}>📍 {selYear}年 學生居住地區分佈</div>
+              {(()=>{
+                const cityStats={};
+                enrolledInRange.forEach(s=>{
+                  const c=s.city||"未填";
+                  if(!cityStats[c]) cityStats[c]={city:c,count:0};
+                  cityStats[c].count++;
+                });
+                const cityList=Object.values(cityStats).sort((a,b)=>b.count-a.count);
+                const maxCity=Math.max(...cityList.map(x=>x.count),1);
+                const cityColors=["#6366f1","#059669","#f59e0b","#ec4899","#3b82f6","#8b5cf6","#0284c7","#ef4444","#10b981","#f97316"];
+                return cityList.length>0
+                  ?<div style={{display:"flex",flexDirection:"column",gap:6,maxHeight:280,overflowY:"auto"}}>
+                    {cityList.map((d,i)=>{
+                      const pct=enrolledInRange.length?Math.round(d.count/enrolledInRange.length*100):0;
+                      return (
+                        <div key={d.city}>
+                          <div style={{display:"flex",justifyContent:"space-between",marginBottom:2,fontSize:12}}>
+                            <span style={{fontWeight:700,color:"#0f172a"}}>{d.city}</span>
+                            <span style={{color:"#64748b"}}>{d.count}人（{pct}%）</span>
+                          </div>
+                          <div style={{background:"#f1f5f9",borderRadius:99,height:6}}>
+                            <div style={{width:`${Math.round(d.count/maxCity*100)}%`,height:"100%",
+                              background:cityColors[i%cityColors.length],borderRadius:99,minWidth:d.count?3:0}}/>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  :<div style={{color:"#94a3b8",fontSize:13,textAlign:"center",padding:20}}>此期間無報名資料</div>;
+              })()}
+            </div>
+          </div>
         </>}
 
         {/* 課程圓餅圖（月報和年報都有） */}
