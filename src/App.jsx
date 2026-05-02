@@ -1564,15 +1564,14 @@ export default function App() {
                       {/* Note */}
                       <div>
                         {isEditNote?(
-                          <textarea autoFocus value={editVal}
+                          <textarea autoFocus defaultValue={editVal}
                             onClick={e=>e.stopPropagation()}
                             onMouseDown={e=>e.stopPropagation()}
-                            onChange={e=>setEditVal(e.target.value)}
                             onBlur={e=>{
-                              // 延遲執行，避免點擊自身時觸發 blur
-                              setTimeout(()=>{updateTask(student.id,t.id,"note",editVal,taskList);setEditCell(null);},150);
+                              const val=e.target.value;
+                              setTimeout(()=>{updateTask(student.id,t.id,"note",val,taskList);setEditCell(null);},200);
                             }}
-                            onKeyDown={e=>{if(e.key==="Escape"){updateTask(student.id,t.id,"note",editVal,taskList);setEditCell(null);}}}
+                            onKeyDown={e=>{if(e.key==="Escape"){const val=e.target.value;updateTask(student.id,t.id,"note",val,taskList);setEditCell(null);}}}
                             style={{...inp(),padding:"4px 8px",fontSize:12,resize:"vertical",minHeight:36,lineHeight:1.5}}/>
                         ):(
                           <button onClick={e=>{e.stopPropagation();setEditCell({sid:student.id,tid:t.id,field:"note",list:taskList});setEditVal(ts.note||"");}}
