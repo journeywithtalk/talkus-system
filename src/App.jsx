@@ -1,6 +1,8 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { auth } from "./firebase";
 import { signInWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail } from "firebase/auth";
+import { collection, doc, getDocs, setDoc, deleteDoc, onSnapshot } from "firebase/firestore";
+import { db } from "./firebase";
 
 // ── 任務定義 ─────────────────────────────────────────────────────
 // 諮詢階段（4項）
@@ -63,31 +65,7 @@ const STATUS_CONFIG = {
   "確定報名":   { color:"#059669", bg:"#ecfdf5", border:"#6ee7b7" },
 };
 
-const INIT_STUDENTS = [
-  {
-    id:1, type:"consult",
-    name:"林佩諭", phone:"0937-077-031", email:"lin@example.com",
-    school:"We Academy", program:"ESL3 + 1堂團課", room:"Quad（四人房）",
-    departDate:"2026-06-28", returnDate:"2026-07-11", weeks:"2",
-    consultant:"陳小明", admin:"林美華", priority:"high",
-    sharedNote:"學生對宿舍有要求，希望盡量安排靠近衛浴的床位。需確認男女混住情況。",
-    createdAt:"2026-03-11", closeType:null, consultDate:"2026-03-11",
-    consultTasks: Object.fromEntries(CONSULT_ITEMS.map(t=>[t.id,{status:"尚未進行",note:"",dueDate:
-      t.id<=3?"2026-03-14":t.id===4?"2026-03-18":"",updatedAt:""}])),
-    enrollTasks: {},
-  },
-  {
-    id:2, type:"enrolled",
-    name:"王小華", phone:"0912-345-678", email:"wang@example.com",
-    school:"We Academy", program:"ESL2", room:"Twin（雙人房）",
-    departDate:"2026-07-12", returnDate:"2026-08-08", weeks:"4",
-    consultant:"王大偉", admin:"張志遠", priority:"medium",
-    sharedNote:"",
-    createdAt:"2026-03-10", closeType:null,
-    consultTasks: Object.fromEntries(CONSULT_ITEMS.map(t=>[t.id,{status:"已完成",note:"",dueDate:"",updatedAt:""}])),
-    enrollTasks:  Object.fromEntries(ENROLL_ITEMS.map(t=>[t.id,{status:"尚未進行",note:t.defaultNote||"",dueDate:"",updatedAt:""}])), // demo data
-  },
-];
+const INIT_STUDENTS = [];
 
 // ── 小元件 ────────────────────────────────────────────────────────
 function Avatar({ name, size=36 }) {
@@ -1050,10 +1028,7 @@ export default function App() {
 
   // ── 帳號資料（模擬，不可用於正式環境）─────────────────
   const [accounts,setAccounts] = useState([
-    {email:"zillionstars0523@gmail.com",password:"123456",role:"manager",name:"管理者",firstLogin:true},
-    {email:"chen@talkus.com",password:"123456",role:"consultant",name:"陳小明",firstLogin:false},
-    {email:"wang@talkus.com",password:"123456",role:"consultant",name:"王大偉",firstLogin:false},
-    {email:"lin@talkus.com",password:"123456",role:"admin",name:"林美華",firstLogin:false},
+    {email:"zillionstars0523@gmail.com",role:"manager",name:"管理者"},
   ]);
 
   // 依帳號的分潤 level 計算（套用到業績頁）
@@ -1066,16 +1041,9 @@ export default function App() {
     if(usd<=levels[2].maxUSD) return {level:levels[2].label,pct:levels[2].pct};
     return {level:levels[3].label,pct:levels[3].pct};
   };
-  const [schoolDB,setSchoolDB]     = useState([
-    {id:1,name:"We Academy",programs:["ESL1","ESL2","ESL3","ESL LITE","Business English","IELTS"],rooms:["Single","Twin","Triple","Quad","Double","Premium Double"]},
-    {id:2,name:"BECI City",programs:["ESL1","ESL2","ESL3","Business","IELTS","TOEIC"],rooms:["Single","Twin","Triple","Quad","Double","Premium Double"]},
-    {id:3,name:"CIA",programs:["ESL1","ESL2","ESL3","Power English","Business","IELTS"],rooms:["Single","Twin","Standard Double","Superior Double","Triple","Quad"]},
-  ]);
+  const [schoolDB,setSchoolDB]     = useState([]);
   const [consultantDB,setConsultantDB] = useState([
-    {id:0,name:"管理者",role:"manager",email:"admin@talkus.com",phone:"",emergencyName:"",emergencyPhone:"",address:"",note:"",startDate:"",endDate:"",status:"正職",probationTarget:5,probationEnd:"",employmentType:"fulltime"},
-    {id:1,name:"陳小明",role:"consultant",email:"chen@talkus.com",phone:"",emergencyName:"",emergencyPhone:"",address:"",note:"",startDate:"2026-01-01",endDate:"",status:"正職",probationTarget:5,probationEnd:"",employmentType:"fulltime"},
-    {id:2,name:"王大偉",role:"consultant",email:"wang@talkus.com",phone:"",emergencyName:"",emergencyPhone:"",address:"",note:"",startDate:"2026-01-01",endDate:"",status:"正職",probationTarget:5,probationEnd:"",employmentType:"fulltime"},
-    {id:3,name:"林美華",role:"admin",email:"lin@talkus.com",phone:"",emergencyName:"",emergencyPhone:"",address:"",note:"",startDate:"2026-01-01",endDate:"",status:"正職",probationTarget:5,probationEnd:"",employmentType:"fulltime"},
+    {id:0,name:"管理者",role:"manager",email:"zillionstars0523@gmail.com",phone:"",emergencyName:"",emergencyPhone:"",address:"",note:"",startDate:"",endDate:"",status:"正職",probationTarget:5,probationEnd:"",employmentType:"fulltime"},
   ]);
   const [notifications,setNotifications] = useState([]); // 系統通知
   const [selId,setSelId]           = useState(null);
@@ -1145,6 +1113,13 @@ export default function App() {
         return {...updated,type:"enrolled",closeType:null};
       return updated;
     }));
+    // 存到 Firestore
+    const updatedStudent=students.find(x=>x.id===studentId);
+    if(updatedStudent){
+      const key2=taskList==="consult"?"consultTasks":"enrollTasks";
+      const now2=new Date().toLocaleDateString("zh-TW");
+      saveStudentToDB({...updatedStudent,[key2]:{...updatedStudent[key2],[taskId]:{...updatedStudent[key2][taskId],[field]:value,updatedAt:now2}}});
+    }
   }
 
   function cycleStatus(studentId,taskId,taskList){
@@ -1232,6 +1207,12 @@ export default function App() {
     }));
     setUpgradeStudentId(null);
     setView("enrolled");
+    // 存到 Firestore
+    const updatedS2=students.find(x=>x.id===student.id);
+    if(updatedS2) setTimeout(()=>{
+      const latest=students.find(x=>x.id===student.id);
+      if(latest) saveStudentToDB(latest);
+    },100);
   }
 
   function confirmClose(student,formData,closeType){
@@ -1284,6 +1265,7 @@ export default function App() {
         :{},
     };
     setStudents(prev=>[s,...prev]);
+    saveStudentToDB(s);
     setShowAddModal(null);
   }
 
@@ -1304,8 +1286,12 @@ export default function App() {
       program:formData.consultChosenProgram||formData.program||"",
       room:formData.consultChosenRoom||formData.room||"",
     };
-    setStudents(prev=>prev.map(s=>s.id===editStudentId?{...s,...merged}:s));
+    const editId2=editStudentId;
+    setStudents(prev=>prev.map(s=>s.id===editId2?{...s,...merged}:s));
     setEditStudentId(null);
+    // 存到 Firestore
+    const orig=students.find(s=>s.id===editId2);
+    if(orig) saveStudentToDB({...orig,...merged});
   }
 
   function confirmEditEnrolled(formData){
@@ -1325,6 +1311,11 @@ export default function App() {
       return {...s,...formData,enrollTasks:updatedTasks};
     }));
     setEditEnrolledId(null);
+    // 存到 Firestore
+    setTimeout(()=>{
+      const latest2=students.find(s=>s.id===editEnrolledId);
+      if(latest2) saveStudentToDB(latest2);
+    },100);
   }
 
   function confirmCancelEnrolled(formData){
@@ -1383,6 +1374,8 @@ export default function App() {
   function saveSharedNote(id,note){
     setStudents(prev=>prev.map(s=>s.id===id?{...s,sharedNote:note}:s));
     setEditingNote(false);
+    const orig2=students.find(s=>s.id===id);
+    if(orig2) saveStudentToDB({...orig2,sharedNote:note});
   }
 
   const inp=(ex={})=>({border:"1.5px solid #e2e8f0",borderRadius:8,padding:"8px 12px",
@@ -4957,6 +4950,58 @@ export default function App() {
     });
     return ()=>unsub();
   },[]);
+
+  // ── Firestore 資料同步 ──────────────────────────────────
+  // 學生資料
+  useEffect(()=>{
+    const unsub=onSnapshot(collection(db,"students"),(snap)=>{
+      const data=snap.docs.map(d=>({...d.data(),id:d.id,_firestoreId:d.id}));
+      setStudents(data);
+    });
+    return ()=>unsub();
+  },[]);
+  // 學校資料
+  useEffect(()=>{
+    const unsub=onSnapshot(collection(db,"schools"),(snap)=>{
+      const data=snap.docs.map(d=>({...d.data(),id:d.id}));
+      setSchoolDB(data);
+    });
+    return ()=>unsub();
+  },[]);
+  // 顧問資料
+  useEffect(()=>{
+    const unsub=onSnapshot(collection(db,"consultants"),(snap)=>{
+      const data=snap.docs.map(d=>({...d.data(),id:d.id}));
+      if(data.length>0) setConsultantDB(data);
+    });
+    return ()=>unsub();
+  },[]);
+
+  // ── Firestore 儲存 helpers ──────────────────────────────
+  const saveStudentToDB=async(student)=>{
+    const id=String(student.id||student._firestoreId||Date.now());
+    const clean={...student};
+    delete clean._firestoreId;
+    clean.id=id;
+    await setDoc(doc(db,"students",id),clean);
+  };
+  const deleteStudentFromDB=async(id)=>{
+    await deleteDoc(doc(db,"students",String(id)));
+  };
+  const saveSchoolToDB=async(school)=>{
+    const id=String(school.id||Date.now());
+    await setDoc(doc(db,"schools",id),{...school,id});
+  };
+  const deleteSchoolFromDB=async(id)=>{
+    await deleteDoc(doc(db,"schools",String(id)));
+  };
+  const saveConsultantToDB=async(member)=>{
+    const id=String(member.id||Date.now());
+    await setDoc(doc(db,"consultants",id),{...member,id});
+  };
+  const deleteConsultantFromDB=async(id)=>{
+    await deleteDoc(doc(db,"consultants",String(id)));
+  };
   const handleChangePwd=()=>{
     if(newPwd.length<6){setChangePwdErr("密碼至少6碼");return;}
     if(newPwd!==newPwd2){setChangePwdErr("兩次密碼不一致");return;}
