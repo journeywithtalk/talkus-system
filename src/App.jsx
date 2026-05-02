@@ -5121,6 +5121,40 @@ export default function App() {
         const acc=accounts.find(a=>a.email===user.email);
         if(acc){setCurrentRole(acc.role);setCurrentUser(acc.name);}
         else{setCurrentRole("manager");setCurrentUser(user.email.split("@")[0]);}
+
+        // ── 登入後才啟動 Firestore 即時同步 ──
+        // 學生資料
+        onSnapshot(collection(db,"students"),(snap)=>{
+          const data=snap.docs.map(d=>({...d.data(),id:d.id,_firestoreId:d.id}));
+          setStudents(data);
+        });
+        // 學校資料
+        onSnapshot(collection(db,"schools"),(snap)=>{
+          const data=snap.docs.map(d=>({...d.data(),id:d.id}));
+          setSchoolDB(data);
+        });
+        // 顧問資料
+        onSnapshot(collection(db,"consultants"),(snap)=>{
+          const data=snap.docs.map(d=>({...d.data(),id:d.id}));
+          if(data.length>0){
+            setConsultantDB(data);
+            // 重新比對角色（用 Firestore 的顧問資料）
+            const me=data.find(c=>c.email===user.email);
+            if(me){setCurrentRole(me.role);setCurrentUser(me.name);}
+          }
+        });
+        // 設定資料
+        onSnapshot(collection(db,"settings"),(snap)=>{
+          snap.docs.forEach(d=>{
+            const key=d.id;
+            const val=d.data().data;
+            if(key==="bonusLevels"&&Array.isArray(val)) setBonusLevels(val);
+            if(key==="parttimeLevels"&&Array.isArray(val)) setParttimeLevels(val);
+            if(key==="adminFeeSettings"&&Array.isArray(val)) setAdminFeeSettings(val);
+            if(key==="exchangeRates"&&val) setExchangeRates(val);
+            if(key==="payStatus"&&val) setPayStatus(val);
+          });
+        });
       }else{
         setIsLoggedIn(false);
       }
@@ -5128,31 +5162,7 @@ export default function App() {
     return ()=>unsub();
   },[]);
 
-  // ── Firestore 資料同步 ──────────────────────────────────
-  // 學生資料
-  useEffect(()=>{
-    const unsub=onSnapshot(collection(db,"students"),(snap)=>{
-      const data=snap.docs.map(d=>({...d.data(),id:d.id,_firestoreId:d.id}));
-      setStudents(data);
-    });
-    return ()=>unsub();
-  },[]);
-  // 學校資料
-  useEffect(()=>{
-    const unsub=onSnapshot(collection(db,"schools"),(snap)=>{
-      const data=snap.docs.map(d=>({...d.data(),id:d.id}));
-      setSchoolDB(data);
-    });
-    return ()=>unsub();
-  },[]);
-  // 顧問資料
-  useEffect(()=>{
-    const unsub=onSnapshot(collection(db,"consultants"),(snap)=>{
-      const data=snap.docs.map(d=>({...d.data(),id:d.id}));
-      if(data.length>0) setConsultantDB(data);
-    });
-    return ()=>unsub();
-  },[]);
+  // ── Firestore 資料同步（已移至 onAuthStateChanged 內）──
 
   // ── Firestore 儲存 helpers ──────────────────────────────
   const saveStudentToDB=async(student)=>{
@@ -5184,21 +5194,7 @@ export default function App() {
   const saveSettingsToDB=async(key,data)=>{
     await setDoc(doc(db,"settings",key),{data});
   };
-  // 讀取設定
-  useEffect(()=>{
-    const unsub=onSnapshot(collection(db,"settings"),(snap)=>{
-      snap.docs.forEach(d=>{
-        const key=d.id;
-        const val=d.data().data;
-        if(key==="bonusLevels"&&Array.isArray(val)) setBonusLevels(val);
-        if(key==="parttimeLevels"&&Array.isArray(val)) setParttimeLevels(val);
-        if(key==="adminFeeSettings"&&Array.isArray(val)) setAdminFeeSettings(val);
-        if(key==="exchangeRates"&&val) setExchangeRates(val);
-        if(key==="payStatus"&&val) setPayStatus(val);
-      });
-    });
-    return ()=>unsub();
-  },[]);
+  // ── 設定資料同步（已移至 onAuthStateChanged 內）──
   const handleChangePwd=()=>{
     if(newPwd.length<6){setChangePwdErr("密碼至少6碼");return;}
     if(newPwd!==newPwd2){setChangePwdErr("兩次密碼不一致");return;}
