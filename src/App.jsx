@@ -1295,7 +1295,9 @@ export default function App() {
       ?(existNote?existNote+"\n\n【結案備註】"+closeNote2:"【結案備註】"+closeNote2)
       :existNote;
     const newConsult2={...student.consultTasks,4:{...(student.consultTasks||{})[4],status:"不報名結案",updatedAt:now}};
-    saveStudentToDB({...student,...formData,type:"closed",closeType:closeType,sharedNote:mergedNote2,consultTasks:newConsult2});
+    const toSave={...student,...formData,type:"closed",closeType:closeType,sharedNote:mergedNote2,consultTasks:newConsult2};
+    console.log("confirmClose saving:",student.id,toSave.type,toSave.closeType);
+    saveStudentToDB(toSave);
   }
 
   function addDays(dateStr,days){
