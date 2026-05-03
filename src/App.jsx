@@ -1161,12 +1161,22 @@ export default function App() {
         return {...updated,type:"enrolled",closeType:null};
       return updated;
     }));
-    // 存到 Firestore
-    const updatedStudent=students.find(x=>x.id===studentId);
-    if(updatedStudent){
+    // 存到 Firestore（需要包含 type/closeType 的變更）
+    const origStudent=students.find(x=>x.id===studentId);
+    if(origStudent){
       const key2=taskList==="consult"?"consultTasks":"enrollTasks";
       const now2=new Date().toLocaleDateString("zh-TW");
-      saveStudentToDB({...updatedStudent,[key2]:{...updatedStudent[key2],[taskId]:{...updatedStudent[key2][taskId],[field]:value,updatedAt:now2}}});
+      let toSave={...origStudent,[key2]:{...origStudent[key2],[taskId]:{...origStudent[key2][taskId],[field]:value,updatedAt:now2}}};
+      // 同步結案狀態
+      if(taskList==="consult"&&field==="status"&&taskId===4&&value==="不報名結案")
+        toSave={...toSave,type:"closed",closeType:"notEnroll"};
+      if(taskList==="consult"&&field==="status"&&taskId===4&&value!=="不報名結案"&&origStudent.closeType==="notEnroll")
+        toSave={...toSave,type:"consult",closeType:null};
+      if(taskList==="enroll"&&field==="status"&&taskId===26&&value==="已回國結案")
+        toSave={...toSave,type:"closed",closeType:"returned"};
+      if(taskList==="enroll"&&field==="status"&&taskId===26&&value!=="已回國結案"&&origStudent.closeType==="returned")
+        toSave={...toSave,type:"enrolled",closeType:null};
+      saveStudentToDB(toSave);
     }
   }
 
