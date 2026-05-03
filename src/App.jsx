@@ -1151,13 +1151,13 @@ export default function App() {
       if(s.id!==studentId) return s;
       const key=taskList==="consult"?"consultTasks":"enrollTasks";
       const updated={...s,[key]:{...s[key],[taskId]:{...s[key][taskId],[field]:value,updatedAt:now}}};
-      if(taskList==="consult"&&field==="status"&&taskId===4&&value==="不報名結案")
+      if(taskList==="consult"&&field==="status"&&taskId==4&&value==="不報名結案")
         return {...updated,type:"closed",closeType:"notEnroll"};
-      if(taskList==="consult"&&field==="status"&&taskId===4&&value!=="不報名結案"&&s.closeType==="notEnroll")
+      if(taskList==="consult"&&field==="status"&&taskId==4&&value!=="不報名結案"&&s.closeType==="notEnroll")
         return {...updated,type:"consult",closeType:null};
-      if(taskList==="enroll"&&field==="status"&&taskId===26&&value==="已回國結案")
+      if(taskList==="enroll"&&field==="status"&&taskId==26&&value==="已回國結案")
         return {...updated,type:"closed",closeType:"returned"};
-      if(taskList==="enroll"&&field==="status"&&taskId===26&&value!=="已回國結案"&&s.closeType==="returned")
+      if(taskList==="enroll"&&field==="status"&&taskId==26&&value!=="已回國結案"&&s.closeType==="returned")
         return {...updated,type:"enrolled",closeType:null};
       return updated;
     }));
@@ -1168,13 +1168,13 @@ export default function App() {
       const now2=new Date().toLocaleDateString("zh-TW");
       let toSave={...origStudent,[key2]:{...origStudent[key2],[taskId]:{...origStudent[key2][taskId],[field]:value,updatedAt:now2}}};
       // 同步結案狀態
-      if(taskList==="consult"&&field==="status"&&taskId===4&&value==="不報名結案")
+      if(taskList==="consult"&&field==="status"&&taskId==4&&value==="不報名結案")
         toSave={...toSave,type:"closed",closeType:"notEnroll"};
-      if(taskList==="consult"&&field==="status"&&taskId===4&&value!=="不報名結案"&&origStudent.closeType==="notEnroll")
+      if(taskList==="consult"&&field==="status"&&taskId==4&&value!=="不報名結案"&&origStudent.closeType==="notEnroll")
         toSave={...toSave,type:"consult",closeType:null};
-      if(taskList==="enroll"&&field==="status"&&taskId===26&&value==="已回國結案")
+      if(taskList==="enroll"&&field==="status"&&taskId==26&&value==="已回國結案")
         toSave={...toSave,type:"closed",closeType:"returned"};
-      if(taskList==="enroll"&&field==="status"&&taskId===26&&value!=="已回國結案"&&origStudent.closeType==="returned")
+      if(taskList==="enroll"&&field==="status"&&taskId==26&&value!=="已回國結案"&&origStudent.closeType==="returned")
         toSave={...toSave,type:"enrolled",closeType:null};
       saveStudentToDB(toSave);
     }
