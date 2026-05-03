@@ -1288,6 +1288,12 @@ export default function App() {
     }));
     setUpgradeStudentId(null);
     setView("archive");
+    // 存到 Firestore
+    setTimeout(()=>{
+      const latest=students.find(x=>x.id===student.id);
+      if(latest) saveStudentToDB({...latest,...formData,type:"closed",closeType:closeType,
+        consultTasks:{...latest.consultTasks,4:{...latest.consultTasks[4],status:"不報名結案",updatedAt:new Date().toLocaleDateString("zh-TW")}}});
+    },200);
   }
 
   function addDays(dateStr,days){
