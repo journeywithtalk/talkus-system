@@ -1288,12 +1288,14 @@ export default function App() {
     }));
     setUpgradeStudentId(null);
     setView("archive");
-    // 存到 Firestore
-    setTimeout(()=>{
-      const latest=students.find(x=>x.id===student.id);
-      if(latest) saveStudentToDB({...latest,...formData,type:"closed",closeType:closeType,
-        consultTasks:{...latest.consultTasks,4:{...latest.consultTasks[4],status:"不報名結案",updatedAt:new Date().toLocaleDateString("zh-TW")}}});
-    },200);
+    // 直接用傳入的 student 組裝完整資料存到 Firestore
+    const existNote=student.sharedNote||"";
+    const closeNote2=formData.closeNote||"";
+    const mergedNote2=closeNote2
+      ?(existNote?existNote+"\n\n【結案備註】"+closeNote2:"【結案備註】"+closeNote2)
+      :existNote;
+    const newConsult2={...student.consultTasks,4:{...(student.consultTasks||{})[4],status:"不報名結案",updatedAt:now}};
+    saveStudentToDB({...student,...formData,type:"closed",closeType:closeType,sharedNote:mergedNote2,consultTasks:newConsult2});
   }
 
   function addDays(dateStr,days){
