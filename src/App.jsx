@@ -1265,12 +1265,12 @@ export default function App() {
     }));
     setUpgradeStudentId(null);
     setView("enrolled");
-    // 存到 Firestore
-    const updatedS2=students.find(x=>x.id===student.id);
-    if(updatedS2) setTimeout(()=>{
-      const latest=students.find(x=>x.id===student.id);
-      if(latest) saveStudentToDB(latest);
-    },100);
+    // 直接用 student 參數組裝完整資料存到 Firestore
+    const newConsult3={...student.consultTasks,4:{...(student.consultTasks||{})[4],status:"確定報名",updatedAt:now}};
+    const enrollTasks3=Object.fromEntries(ENROLL_ITEMS.map(t=>[t.id,{
+      status:"尚未進行",note:t.defaultNote||"",
+      dueDate:dueDates[t.id]||"",updatedAt:""}]));
+    saveStudentToDB({...student,...formData,type:"enrolled",consultTasks:newConsult3,enrollTasks:enrollTasks3});
   }
 
   function confirmClose(student,formData,closeType){
@@ -1378,12 +1378,20 @@ export default function App() {
       );
       return {...s,...formData,enrollTasks:updatedTasks};
     }));
+    // 直接組裝完整資料存到 Firestore
+    const origE=students.find(s=>s.id===editEnrolledId);
+    if(origE){
+      const newDues2=calcEnrollDueDates(formData.enrollDate||"",formData.departDate||"",formData.returnDate||"");
+      const updatedTasks2=Object.fromEntries(
+        Object.entries(origE.enrollTasks).map(([tid,task])=>{
+          const id2=Number(tid);
+          if(task.status==="已完成") return [tid,task];
+          return [tid,{...task,dueDate:newDues2[id2]||task.dueDate}];
+        })
+      );
+      saveStudentToDB({...origE,...formData,enrollTasks:updatedTasks2});
+    }
     setEditEnrolledId(null);
-    // 存到 Firestore
-    setTimeout(()=>{
-      const latest2=students.find(s=>s.id===editEnrolledId);
-      if(latest2) saveStudentToDB(latest2);
-    },100);
   }
 
   function confirmCancelEnrolled(formData){
