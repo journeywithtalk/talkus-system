@@ -1206,9 +1206,9 @@ export default function App() {
       s[8] =add(enrollDate,3);
       s[11]=add(enrollDate,4); s[12]=add(enrollDate,4); s[9]=add(enrollDate,4);
       s[13]=add(enrollDate,5);
-      s[28]=add(enrollDate,7); s[16]=add(enrollDate,7);
+      s[28]=sub(departDate,35); s[16]=sub(departDate,35);
       s[14]=sub(departDate,6); s[15]=sub(departDate,6);
-      s[17]=sub(departDate,6); s[29]=sub(departDate,6);
+      s[17]=sub(departDate,28); s[29]=sub(departDate,28);
       s[22]=sub(departDate,5);
       s[21]=sub(departDate,4);
       s[18]=sub(departDate,4); s[19]=sub(departDate,4);
@@ -1219,9 +1219,9 @@ export default function App() {
       s[8] =add(enrollDate,3);
       s[11]=add(enrollDate,7); s[12]=add(enrollDate,7); s[9]=add(enrollDate,7);
       s[13]=add(enrollDate,10);
-      s[28]=add(enrollDate,14); s[16]=add(enrollDate,14);
+      s[28]=sub(departDate,35); s[16]=sub(departDate,35);
       s[14]=sub(departDate,10); s[15]=sub(departDate,10);
-      s[17]=sub(departDate,10); s[29]=sub(departDate,10);
+      s[17]=sub(departDate,28); s[29]=sub(departDate,28);
       s[22]=sub(departDate,7);
       s[21]=sub(departDate,4);
       s[18]=sub(departDate,4); s[19]=sub(departDate,4);
@@ -1234,7 +1234,7 @@ export default function App() {
       s[13]=sub(departDate,30);
       s[28]=sub(departDate,35); s[16]=sub(departDate,35);
       s[14]=sub(departDate,14); s[15]=sub(departDate,14);
-      s[17]=sub(departDate,10); s[29]=sub(departDate,10);
+      s[17]=sub(departDate,28); s[29]=sub(departDate,28);
       s[22]=sub(departDate,14);
       s[21]=sub(departDate,4);
       s[18]=sub(departDate,7); s[19]=sub(departDate,7);
