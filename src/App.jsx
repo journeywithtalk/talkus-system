@@ -918,7 +918,7 @@ function AddStudentModal({ mode, prefill, onConfirm, onCancel, schoolDB=[], cons
                             if(sel){updSchool(idx,"program","");updSchool(idx,"room","");}
                           }} style={sinp}>
                             <option value="">— 選擇學校 —</option>
-                            {schoolDB.map(s=><option key={s.id} value={s.name}>{s.name}</option>)}
+                            {[...schoolDB].sort((a,b)=>a.name.localeCompare(b.name)).map(s=><option key={s.id} value={s.name}>{s.name}</option>)}
                           </select>
                       }
                       {/* 課程 */}
