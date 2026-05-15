@@ -1040,6 +1040,16 @@ export default function App() {
   };
   const [currentUser,setCurrentUser] = useState("管理者");
 
+  // 響應式：偵測視窗寬度
+  const [winW,setWinW] = useState(window.innerWidth);
+  useEffect(()=>{
+    const h=()=>setWinW(window.innerWidth);
+    window.addEventListener("resize",h);
+    return ()=>window.removeEventListener("resize",h);
+  },[]);
+  const sidebarCollapsed=winW<900;
+  const sidebarW=sidebarCollapsed?56:210;
+
   // ── 分潤 Level 設定 ──────────────────────────────────
   // 兼職行政費設定（可修改金額與生效日）
   const [adminFeeSettings,setAdminFeeSettings] = useState([
@@ -5355,45 +5365,51 @@ export default function App() {
         if(e.target.tagName==="TEXTAREA"||e.target.tagName==="INPUT") e.stopPropagation();
       }}>
       {/* Sidebar */}
-      <div style={{width:210,background:"#0f172a",flexShrink:0,display:"flex",flexDirection:"column",
-        position:"fixed",top:0,left:0,bottom:0,zIndex:100}}>
-        <div style={{padding:"22px 20px 18px",borderBottom:"1px solid #1e293b"}}>
-          <div style={{fontSize:11,color:"#6366f1",fontWeight:800,letterSpacing:2,marginBottom:5}}>🇵🇭 TALKUS</div>
-          <div style={{fontSize:15,color:"#f8fafc",fontWeight:800,lineHeight:1.35}}>菲律賓遊學<br/>流程管理</div>
+      <div style={{width:sidebarW,background:"#0f172a",flexShrink:0,display:"flex",flexDirection:"column",
+        position:"fixed",top:0,left:0,bottom:0,zIndex:100,transition:"width 0.2s",overflow:"hidden"}}>
+        <div style={{padding:sidebarCollapsed?"16px 8px 12px":"22px 20px 18px",borderBottom:"1px solid #1e293b",textAlign:sidebarCollapsed?"center":"left"}}>
+          <div style={{fontSize:11,color:"#6366f1",fontWeight:800,letterSpacing:2,marginBottom:sidebarCollapsed?0:5}}>{sidebarCollapsed?"🇵🇭":"🇵🇭 TALKUS"}</div>
+          {!sidebarCollapsed&&<div style={{fontSize:15,color:"#f8fafc",fontWeight:800,lineHeight:1.35}}>菲律賓遊學<br/>流程管理</div>}
         </div>
-        <nav style={{padding:"14px 12px",flex:1}}>
+        <nav style={{padding:sidebarCollapsed?"10px 6px":"14px 12px",flex:1}}>
           {NAV.filter(n=>!n.hide).map(n=>(
-            <button key={n.id} onClick={()=>setView(n.id)} style={{
-              display:"flex",alignItems:"center",gap:10,width:"100%",
+            <button key={n.id} onClick={()=>setView(n.id)} title={sidebarCollapsed?n.label:""} style={{
+              display:"flex",alignItems:"center",gap:sidebarCollapsed?0:10,width:"100%",
+              justifyContent:sidebarCollapsed?"center":"flex-start",
               background:view===n.id?"#6366f1":"transparent",
               color:view===n.id?"#fff":"#94a3b8",
-              border:"none",borderRadius:8,padding:"10px 14px",
-              cursor:"pointer",fontSize:14,fontWeight:view===n.id?700:500,
-              textAlign:"left",fontFamily:"inherit",marginBottom:3,transition:"all 0.15s"}}>
-              <span style={{fontSize:16}}>{n.icon}</span>
-              <span style={{flex:1}}>{n.label}</span>
+              border:"none",borderRadius:8,padding:sidebarCollapsed?"10px 6px":"10px 14px",
+              cursor:"pointer",fontSize:sidebarCollapsed?18:14,fontWeight:view===n.id?700:500,
+              textAlign:"left",fontFamily:"inherit",marginBottom:3,transition:"all 0.15s",position:"relative"}}>
+              <span style={{fontSize:sidebarCollapsed?20:16}}>{n.icon}</span>
+              {!sidebarCollapsed&&<span style={{flex:1}}>{n.label}</span>}
               {n.badge>0&&(
-                <span style={{background:view===n.id?"rgba(255,255,255,0.25)":"#6366f1",
-                  color:"#fff",borderRadius:99,fontSize:11,fontWeight:800,
-                  padding:"1px 7px",minWidth:20,textAlign:"center"}}>{n.badge}</span>
+                sidebarCollapsed
+                  ?<span style={{position:"absolute",top:2,right:2,background:"#6366f1",
+                    color:"#fff",borderRadius:99,fontSize:9,fontWeight:800,
+                    padding:"0px 4px",minWidth:14,textAlign:"center"}}>{n.badge}</span>
+                  :<span style={{background:view===n.id?"rgba(255,255,255,0.25)":"#6366f1",
+                    color:"#fff",borderRadius:99,fontSize:11,fontWeight:800,
+                    padding:"1px 7px",minWidth:20,textAlign:"center"}}>{n.badge}</span>
               )}
             </button>
           ))}
         </nav>
-        <div style={{padding:"14px 20px",borderTop:"1px solid #1e293b"}}>
-          <div style={{fontSize:11,color:"#a5b4fc",fontWeight:700,marginBottom:2}}>{currentUser}</div>
-          <div style={{fontSize:10,color:"#475569",marginBottom:6}}>{{manager:"管理者",consultant:"顧問",admin:"行政"}[currentRole]}</div>
+        <div style={{padding:sidebarCollapsed?"10px 6px":"14px 20px",borderTop:"1px solid #1e293b",textAlign:sidebarCollapsed?"center":"left"}}>
+          {!sidebarCollapsed&&<div style={{fontSize:11,color:"#a5b4fc",fontWeight:700,marginBottom:2}}>{currentUser}</div>}
+          {!sidebarCollapsed&&<div style={{fontSize:10,color:"#475569",marginBottom:6}}>{{manager:"管理者",consultant:"顧問",admin:"行政"}[currentRole]}</div>}
           <button onClick={()=>{signOut(auth);setIsLoggedIn(false);setLoginEmail("");setLoginPwd("");}}
+            title={sidebarCollapsed?"登出":""}
             style={{background:"rgba(239,68,68,0.15)",color:"#fca5a5",border:"1px solid rgba(239,68,68,0.3)",
-              borderRadius:6,padding:"5px 12px",fontSize:12,fontWeight:700,cursor:"pointer",
+              borderRadius:6,padding:sidebarCollapsed?"6px":"5px 12px",fontSize:12,fontWeight:700,cursor:"pointer",
               fontFamily:"inherit",width:"100%"}}>
-            登出
+            {sidebarCollapsed?"⏻":"登出"}
           </button>
         </div>
       </div>
 
       {/* Main */}
-      <div style={{marginLeft:210,flex:1}}>
+      <div style={{marginLeft:sidebarW,flex:1,transition:"margin-left 0.2s"}}>
         <div style={{background:"#fff",padding:"15px 30px",borderBottom:"1px solid #e2e8f0",
           position:"sticky",top:0,zIndex:90,boxShadow:"0 1px 4px rgba(0,0,0,0.04)"}}>
           <div>
