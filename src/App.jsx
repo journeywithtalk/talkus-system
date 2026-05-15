@@ -1499,9 +1499,9 @@ export default function App() {
               </div>
               <div style={{background:"#fff",border:`1.5px solid ${cfg.color}20`,
                 borderTop:"none",borderRadius:"0 0 12px 12px"}}>
-                <div style={{display:"grid",gridTemplateColumns:"40px minmax(160px,1fr) 76px 148px 128px 1fr",
+                <div style={{display:"grid",gridTemplateColumns:sidebarCollapsed?"32px minmax(120px,1fr) 60px 90px 100px minmax(80px,1fr)":"40px minmax(160px,1fr) 76px 148px 128px 1fr",
                   background:"#f8fafc",padding:"7px 14px",borderBottom:"1px solid #e2e8f0",
-                  fontSize:11,color:"#64748b",fontWeight:700,gap:8}}>
+                  fontSize:sidebarCollapsed?10:11,color:"#64748b",fontWeight:700,gap:sidebarCollapsed?4:8}}>
                   <span>✓</span><span>工作項目</span><span>負責</span>
                   <span>進度狀態</span><span>預計完成日期</span><span>備註</span>
                 </div>
@@ -1643,7 +1643,7 @@ export default function App() {
     const effectiveTab=!isEnrolledOrClosed?"consult":detailTab;
 
     return (
-      <div>
+      <div style={{overflowX:"hidden",maxWidth:"100%"}}>
         <button onClick={()=>setView(isClosed?"archive":sel.type==="enrolled"?"enrolled":"consult")}
           style={{...btnS("#f1f5f9","#475569"),marginBottom:20,padding:"7px 16px",fontSize:13}}>
           ← 返回
@@ -1651,8 +1651,8 @@ export default function App() {
 
         {/* Header */}
         <div style={{background:"linear-gradient(135deg,#1e1b4b 0%,#4338ca 100%)",
-          borderRadius:16,padding:"22px 26px",marginBottom:14,color:"#fff",
-          boxShadow:"0 8px 32px rgba(99,102,241,0.22)"}}>
+          borderRadius:16,padding:sidebarCollapsed?"16px 14px":"22px 26px",marginBottom:14,color:"#fff",
+          boxShadow:"0 8px 32px rgba(99,102,241,0.22)",overflow:"hidden"}}>
           <div style={{display:"flex",alignItems:"center",gap:16,marginBottom:12}}>
             <Avatar name={sel.name} size={52}/>
             <div style={{flex:1}}>
