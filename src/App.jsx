@@ -5410,8 +5410,8 @@ export default function App() {
 
       {/* Main */}
       <div style={{marginLeft:sidebarW,flex:1,transition:"margin-left 0.2s"}}>
-        <div style={{background:"#fff",padding:"15px 30px",borderBottom:"1px solid #e2e8f0",
-          position:"sticky",top:0,zIndex:90,boxShadow:"0 1px 4px rgba(0,0,0,0.04)"}}>
+        <div style={{background:"#fff",padding:sidebarCollapsed?"12px 16px":"15px 30px",borderBottom:"1px solid #e2e8f0",
+          position:"sticky",top:0,zIndex:90,boxShadow:"0 1px 4px rgba(0,0,0,0.04)",overflow:"hidden"}}>
           <div>
             <div style={{fontSize:19,fontWeight:800,color:"#0f172a"}}>
               {view==="dashboard"&&"儀表板"}
@@ -5442,7 +5442,7 @@ export default function App() {
             </div>
           )}
         </div>
-        <div style={{padding:26}}>
+        <div style={{padding:sidebarCollapsed?16:26}}>
           {view==="dashboard"&&<DashboardView/>}
           {view==="consult"  &&<ConsultView/>}
           {view==="enrolled" &&<EnrolledView/>}
