@@ -4259,7 +4259,7 @@ export default function App() {
       if(nm&&!s.name.toLowerCase().includes(nm)) return false;
       if(pg&&!s.programs.some(p=>p.toLowerCase().includes(pg))) return false;
       return true;
-    });
+    }).sort((a,b)=>a.name.localeCompare(b.name));
     const totalPages=Math.max(1,Math.ceil(filtered.length/perPage));
     const paged=filtered.slice((page-1)*perPage,page*perPage);
     const sinp2={border:"1.5px solid #e2e8f0",borderRadius:8,padding:"7px 12px",fontSize:13,
