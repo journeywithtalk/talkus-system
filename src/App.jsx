@@ -5395,7 +5395,6 @@ export default function App() {
       {/* Main */}
       <div style={{marginLeft:210,flex:1}}>
         <div style={{background:"#fff",padding:"15px 30px",borderBottom:"1px solid #e2e8f0",
-          display:"flex",alignItems:"center",justifyContent:"space-between",
           position:"sticky",top:0,zIndex:90,boxShadow:"0 1px 4px rgba(0,0,0,0.04)"}}>
           <div>
             <div style={{fontSize:19,fontWeight:800,color:"#0f172a"}}>
@@ -5416,13 +5415,13 @@ export default function App() {
             <div style={{fontSize:11,color:"#94a3b8",marginTop:1}}>台灣透客文教有限公司　菲律賓遊學管理後台</div>
           </div>
           {view==="detail"&&(
-            <div style={{display:"flex",gap:7,alignItems:"center"}}>
-              <span style={{fontSize:12,color:"#64748b"}}>切換：</span>
+            <div style={{display:"flex",gap:6,alignItems:"center",overflowX:"auto",marginTop:10,paddingBottom:2}}>
+              <span style={{fontSize:11,color:"#64748b",whiteSpace:"nowrap",flexShrink:0}}>切換：</span>
               {[...visibleConsult,...visibleEnrolled,...visibleClosed].map(s=>(
                 <button key={s.id}
                   onClick={()=>{setSelId(s.id);setDetailTab(s.type==="consult"?"consult":"enroll");}}
                   style={{...btnS(selId===s.id?"#6366f1":"#f1f5f9",selId===s.id?"#fff":"#475569"),
-                    padding:"5px 12px",fontSize:12}}>{s.name}</button>
+                    padding:"4px 10px",fontSize:11,whiteSpace:"nowrap",flexShrink:0}}>{s.name}</button>
               ))}
             </div>
           )}
